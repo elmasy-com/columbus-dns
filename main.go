@@ -104,6 +104,7 @@ func handleFunc(w dns.ResponseWriter, q *dns.Msg) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to exchange message: %s\n", err)
 		w.Close()
+		return
 	}
 	if r == nil {
 		fmt.Fprintf(os.Stderr, "Error: reply is nil\n")
