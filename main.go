@@ -69,9 +69,6 @@ func insertWorker(wg *sync.WaitGroup) {
 	for r := range ReplyChan {
 
 		switch {
-		case r.Rcode != dns.RcodeSuccess:
-			// Response code indicates error
-			continue
 		case r.Answer == nil:
 			continue
 		case r.Question == nil:
@@ -112,7 +109,9 @@ func handleFunc(w dns.ResponseWriter, q *dns.Msg) {
 		return
 	}
 
-	ReplyChan <- r
+	if r.Rcode == 0 {
+		ReplyChan <- r
+	}
 
 	err = w.WriteMsg(r)
 	if err != nil {
