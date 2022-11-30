@@ -113,6 +113,13 @@ func handleFunc(w dns.ResponseWriter, q *dns.Msg) {
 		ReplyChan <- r
 	}
 
+	fmt.Printf("%s -> \"%s %s %s\" %s\n",
+		w.RemoteAddr().String(),
+		q.Question[0].Name,
+		dns.ClassToString[q.Question[0].Qclass],
+		dns.TypeToString[q.Question[0].Qtype],
+		dns.RcodeToString[r.Rcode])
+
 	err = w.WriteMsg(r)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to write reply: %s\n", err)
