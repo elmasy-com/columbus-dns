@@ -8,19 +8,19 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	sdk "github.com/elmasy-com/columbus-sdk"
-	"github.com/elmasy-com/elnet/domain"
-	"github.com/elmasy-com/elnet/ip"
 	"github.com/miekg/dns"
 )
 
 var (
-	ReplyChan    chan *dns.Msg
-	Version      string
-	Commit       string
-	resolvers    []string
-	resolversNum int32
+	ReplyChan     chan *dns.Msg
+	WarnThreshold int
+	Version       string
+	Commit        string
+	resolvers     []string
+	resolversNum  int32
 )
 
 func getRandomResolver() string {
@@ -38,24 +38,30 @@ func getRandomResolver() string {
 func isValidResponse(m dns.RR) bool {
 
 	switch t := m.(type) {
+	case *dns.SOA:
+		// SOA returned if no record found
+		return false
 	case *dns.A:
-		return ip.IsValid4(t.A)
+		return true
 	case *dns.AAAA:
-		return ip.IsValid6(t.AAAA)
+		return true
 	case *dns.CNAME:
-		return domain.IsValid(t.Target)
+		return true
 	case *dns.MX:
-		return domain.IsValid(t.Mx)
+		return true
 	case *dns.TXT:
-		// True on non empty string
-		for i := range t.Txt {
-			if len(t.Txt[i]) > 0 {
-				return true
-			}
-		}
+		return true
+	case *dns.NS:
+		return true
+	case *dns.CERT:
+		return true
+	case *dns.SRV:
+		return true
+	case *dns.PTR:
+		// PTR records are out of context
 		return false
 	default:
-		fmt.Printf("Unknwon reply type: %T\n", t)
+		fmt.Printf("Unknown reply type: %T\n", t)
 		return false
 	}
 }
@@ -92,10 +98,16 @@ func insertWorker(wg *sync.WaitGroup) {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to insert %s: %s\n", r.Question[0].Name, err)
 		}
+
+		if len(ReplyChan) > WarnThreshold {
+			fmt.Fprintf(os.Stderr, "Number of reply messages in queue exceeds the threshold: %d\n", len(ReplyChan))
+		}
 	}
 }
 
 func handleFunc(w dns.ResponseWriter, q *dns.Msg) {
+
+	start := time.Now()
 
 	r, err := dns.Exchange(q, getRandomResolver())
 	if err != nil {
@@ -113,17 +125,18 @@ func handleFunc(w dns.ResponseWriter, q *dns.Msg) {
 		ReplyChan <- r
 	}
 
-	fmt.Printf("%s -> \"%s %s %s\" %s\n",
-		w.RemoteAddr().String(),
-		q.Question[0].Name,
-		dns.ClassToString[q.Question[0].Qclass],
-		dns.TypeToString[q.Question[0].Qtype],
-		dns.RcodeToString[r.Rcode])
-
 	err = w.WriteMsg(r)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to write reply: %s\n", err)
 	}
+
+	fmt.Printf("%s -> %s %s %s %s %s\n",
+		w.RemoteAddr().String(),
+		q.Question[0].Name,
+		dns.ClassToString[q.Question[0].Qclass],
+		dns.TypeToString[q.Question[0].Qtype],
+		dns.RcodeToString[r.Rcode],
+		time.Since(start))
 }
 
 func main() {
@@ -157,6 +170,7 @@ func main() {
 
 	// Create buff channel
 	ReplyChan = make(chan *dns.Msg, conf.BuffSize)
+	WarnThreshold = conf.BuffSize / 10 * 9
 
 	// Set ColumbusServer
 	sdk.SetURI(conf.ColumbusServer)
