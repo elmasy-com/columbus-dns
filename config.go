@@ -41,6 +41,10 @@ func parseConfig(path string) (Config, error) {
 		}
 	}
 
+	if c.ApiKey == "" {
+		return c, fmt.Errorf("API key is missing")
+	}
+
 	if c.ColumbusServer == "" {
 		c.ColumbusServer = "https://columbus.elmasy.com"
 	}
