@@ -18,7 +18,7 @@ Alice <------- 93.184.216.34 <---------
 
 ```
 
-- Only domains with valid answer will be sent to the server (eg.: not `NXDOMAIN`)
+- Only domains with valid answer will be sent to the server (`NOERROR`)
 
 # IMPORTANT!
 
@@ -28,7 +28,7 @@ The IP will be not logged, but the domain will!
 
 # Install
 
-The most secure way to run `columbus-dns` is to run as a **non root** on a non-privileged port (eg.: 1053) and *redirect* traffic deisgnated to port 53.
+The most secure way to run `columbus-dns` is to run as a **non root** user on a non-privileged port (eg.: 1053) and *redirect* traffic deisgnated to port 53.
 
 nftables example:
 ```
@@ -96,7 +96,7 @@ wget -q -O "columbus-dns.conf" "https://raw.githubusercontent.com/elmasy-com/col
 sudo mv columbus-dns.conf /etc/
 ```
 ```bash
-sudo chmod 0640 
+sudo chmod 0640 /etc/columbus-dns.conf
 ```
 ```bash
 nano /etc/columbus-dns.conf
