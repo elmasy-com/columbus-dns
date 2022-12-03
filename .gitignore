@@ -1,3 +1,5 @@
 columbus-dns
 test.columbus-dns.conf
-checksum
+checksums
+columbus-dns-linux-amd64
+columbus-dns-linux-arm64
