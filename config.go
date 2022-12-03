@@ -58,7 +58,7 @@ func parseConfig(path string) (Config, error) {
 	}
 
 	if c.ListenAddress == "" {
-		c.ListenAddress = ":53"
+		c.ListenAddress = ":1053"
 	}
 
 	return c, nil
