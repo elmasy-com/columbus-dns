@@ -96,6 +96,9 @@ wget -q -O "columbus-dns.conf" "https://raw.githubusercontent.com/elmasy-com/col
 sudo mv columbus-dns.conf /etc/
 ```
 ```bash
+chown columbus-dns:columbus-dns /etc/columbus-dns.conf
+```
+```bash
 sudo chmod 0640 /etc/columbus-dns.conf
 ```
 ```bash
