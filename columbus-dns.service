@@ -4,6 +4,7 @@ Documentation=https://github.com/elmasy-com/columbus-dns
 Wants=network.target auditd.service
 
 [Service]
+User=columbus-dns
 Restart=always
 ExecStart=/usr/bin/columbus-dns -config /etc/columbus-dns.conf
 TimeoutStopSec=180
