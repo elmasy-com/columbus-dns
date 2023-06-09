@@ -89,19 +89,22 @@ mv columbus-dns.service /etc/systemd/system/
 
 3. Install and edit `columbus-dns.conf`
 ```bash
+mkdir /etc/columbus
+```
+```bash
 wget -q -O "columbus-dns.conf" "https://raw.githubusercontent.com/elmasy-com/columbus-dns/main/columbus-dns.conf"
 ```
 ```bash
-sudo mv columbus-dns.conf /etc/
+sudo mv columbus-dns.conf /etc/columbus/dns.conf
 ```
 ```bash
-chown columbus-dns:columbus-dns /etc/columbus-dns.conf
+chown columbus-dns:columbus-dns /etc/columbus/dns.conf
 ```
 ```bash
-sudo chmod 0640 /etc/columbus-dns.conf
+sudo chmod 0640 /etc/columbus/dns.conf
 ```
 ```bash
-nano /etc/columbus-dns.conf
+nano /etc/columbus/dns.conf
 ```
 
 4. Install the binary:
