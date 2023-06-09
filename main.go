@@ -10,7 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	sdk "github.com/elmasy-com/columbus-sdk"
+	"github.com/elmasy-com/columbus-server/db"
+	"github.com/elmasy-com/elnet/domain"
 	"github.com/miekg/dns"
 )
 
@@ -38,9 +39,7 @@ func getRandomResolver() string {
 func isValidResponse(m dns.RR) bool {
 
 	switch t := m.(type) {
-	case *dns.SOA:
-		// SOA returned if no record found
-		return false
+
 	case *dns.A:
 		return true
 	case *dns.AAAA:
@@ -53,15 +52,19 @@ func isValidResponse(m dns.RR) bool {
 		return true
 	case *dns.NS:
 		return true
-	case *dns.CERT:
-		return true
+	//case *dns.CERT:
+	// TODO: Implement more type
+	//return false
 	case *dns.SRV:
 		return true
+	case *dns.SOA:
+		// SOA returned if no record found
+		return false
 	case *dns.PTR:
 		// PTR records are out of context
 		return false
 	default:
-		fmt.Printf("Unknown reply type: %T\n", t)
+		fmt.Fprintf(os.Stderr, "Unknown reply type: %T\n", t)
 		return false
 	}
 }
@@ -94,9 +97,21 @@ func insertWorker(wg *sync.WaitGroup) {
 			continue
 		}
 
-		err := sdk.Insert(r.Question[0].Name)
+		wc, err := domain.IsWildcard(r.Question[0].Name)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to check if %s is wildcard: %s\n", r.Question[0].Name, err)
+			continue
+		}
+		if wc {
+			continue
+		}
+
+		ni, err := db.Insert(r.Question[0].Name)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to insert %s: %s\n", r.Question[0].Name, err)
+		}
+		if ni {
+			fmt.Printf("New domain inserted: %s\n", r.Question[0].Name)
 		}
 
 		if len(ReplyChan) > WarnThreshold {
@@ -112,12 +127,16 @@ func handleFunc(w dns.ResponseWriter, q *dns.Msg) {
 	r, err := dns.Exchange(q, getRandomResolver())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to exchange message: %s\n", err)
-		w.Close()
+		q.MsgHdr.Response = true
+		q.MsgHdr.Rcode = 2
+		w.WriteMsg(q)
 		return
 	}
 	if r == nil {
 		fmt.Fprintf(os.Stderr, "Error: reply is nil\n")
-		w.Close()
+		q.MsgHdr.Response = true
+		q.MsgHdr.Rcode = 2
+		w.WriteMsg(q)
 		return
 	}
 
@@ -172,15 +191,14 @@ func main() {
 	ReplyChan = make(chan *dns.Msg, conf.BuffSize)
 	WarnThreshold = conf.BuffSize / 10 * 9
 
-	// Set ColumbusServer
-	sdk.SetURI(conf.ColumbusServer)
-
-	// Get Columbus user
-	err = sdk.GetDefaultUser(conf.ApiKey)
+	// Connect to MongoDB
+	fmt.Printf("Connecting to MongoDB...\n")
+	err = db.Connect(conf.MongoURI)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to get Columbus user: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to connect to MongoDB: %s\n", err)
 		os.Exit(1)
 	}
+	defer db.Disconnect()
 
 	fmt.Printf("Starting %d workers...\n", conf.NumWorkers)
 	// Start workers

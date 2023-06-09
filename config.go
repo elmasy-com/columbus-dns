@@ -9,12 +9,11 @@ import (
 )
 
 type Config struct {
-	Resolvers      []string `yaml:"Resolvers"`
-	ApiKey         string   `yaml:"ApiKey"`
-	ColumbusServer string   `yaml:"ColumbusServer"`
-	NumWorkers     int      `yaml:"NumWorkers"`
-	BuffSize       int      `yaml:"BuffSize"`
-	ListenAddress  string   `yaml:"ListenAddress"`
+	Resolvers     []string `yaml:"Resolvers"`
+	MongoURI      string   `yaml:"MongoURI"`
+	NumWorkers    int      `yaml:"NumWorkers"`
+	BuffSize      int      `yaml:"BuffSize"`
+	ListenAddress string   `yaml:"ListenAddress"`
 }
 
 // parseConfig parses the config file in path, set the default if needed and return the Config struct.
@@ -41,12 +40,8 @@ func parseConfig(path string) (Config, error) {
 		}
 	}
 
-	if c.ApiKey == "" {
-		return c, fmt.Errorf("API key is missing")
-	}
-
-	if c.ColumbusServer == "" {
-		c.ColumbusServer = "https://columbus.elmasy.com"
+	if c.MongoURI == "" {
+		return c, fmt.Errorf("MongoURI is missing")
 	}
 
 	if c.NumWorkers <= 0 {
