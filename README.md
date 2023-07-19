@@ -2,15 +2,15 @@
 
 A DNS server to collect domains to Columbus Server.
 
-The goal of `columbus-dns` is to make it easy/possible for users to easily  contribute to the Columbus Database.
+The goal of `columbus-dns` is to make it easy/possible for users to easily contribute to the Columbus Project.
 
-By setting the system's DNS servers to `columbus-dns` servers while enumerationg subdomains, hunting bugs, etc  you can contribute to the Database.
+By setting the DNS servers to `columbus-dns` while enumerationg subdomains, hunting bugs, etc you can contribute to the Columbus Project.
 
 ## Design
 
 ```
                                _________________
-  |---> dig exmaple.com A ---->| COLUMBUS-DNS  | -----> /insert/example.com -----> columbus.elmasy.com
+  |---> dig exmaple.com A ---->| COLUMBUS-DNS  | -----> Insert -----> columbus.elmasy.com
   |                            -----------------
   ^                                   |
   |                                   V
@@ -24,7 +24,6 @@ Alice <------- 93.184.216.34 <---------
 
 **THIS SERVER IS NOT MEANT TO USED AS A DAILY DNS RESOLVER!** 
 
-The IP will be not logged, but the domain will!
 
 # Install
 
