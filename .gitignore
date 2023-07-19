@@ -1,5 +1,3 @@
 columbus-dns
-test.columbus-dns.conf
-checksums
-columbus-dns-linux-amd64
-columbus-dns-linux-arm64
+internal/
+release/
