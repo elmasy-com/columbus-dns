@@ -11,17 +11,17 @@ import (
 	"time"
 
 	"github.com/elmasy-com/columbus-server/db"
-	"github.com/elmasy-com/elnet/domain"
+	eldns "github.com/elmasy-com/elnet/dns"
+
 	"github.com/miekg/dns"
 )
 
 var (
-	ReplyChan     chan *dns.Msg
-	WarnThreshold int
-	Version       string
-	Commit        string
-	resolvers     []string
-	resolversNum  int32
+	ReplyChan    chan *dns.Msg
+	Version      string
+	Commit       string
+	resolvers    []string
+	resolversNum int32
 )
 
 func getRandomResolver() string {
@@ -44,22 +44,27 @@ func isValidResponse(m dns.RR) bool {
 		return true
 	case *dns.AAAA:
 		return true
+	case *dns.CAA:
+		return true
 	case *dns.CNAME:
+		return true
+	case *dns.DNAME:
 		return true
 	case *dns.MX:
 		return true
-	case *dns.TXT:
-		return true
 	case *dns.NS:
 		return true
+	case *dns.SOA:
+		return true
+	case *dns.SRV:
+		return true
+	case *dns.TXT:
+		return true
+
 	//case *dns.CERT:
 	// TODO: Implement more type
 	//return false
-	case *dns.SRV:
-		return true
-	case *dns.SOA:
-		// SOA returned if no record found
-		return false
+
 	case *dns.PTR:
 		// PTR records are out of context
 		return false
@@ -78,26 +83,22 @@ func insertWorker(wg *sync.WaitGroup) {
 	for r := range ReplyChan {
 
 		switch {
-		case r.Answer == nil:
-			continue
-		case r.Question == nil:
-			fmt.Fprintf(os.Stderr, "Error: question section is nil\n")
-			continue
-		case len(r.Question) == 0:
+		case len(r.Question) < 1:
 			fmt.Fprintf(os.Stderr, "Error: question section is empty\n")
+			continue
+		case len(r.Answer) < 1:
+			fmt.Fprintf(os.Stderr, "Error: message answer is empty\n")
 			continue
 		case len(r.Question) > 1:
 			fmt.Fprintf(os.Stderr, "Error: multiple question\n")
 			continue
-		case len(r.Answer) == 0:
-			fmt.Fprintf(os.Stderr, "Error: message answer is empty\n")
-			continue
+
 		case !isValidResponse(r.Answer[0]):
 			// Further check requires, see: https://community.cloudflare.com/t/noerror-response-for-not-exist-domain-breaks-nslookup/173897
 			continue
 		}
 
-		wc, err := domain.IsWildcard(r.Question[0].Name)
+		wc, err := eldns.IsWildcard(r.Question[0].Name, r.Question[0].Qtype)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to check if %s is wildcard: %s\n", r.Question[0].Name, err)
 			continue
@@ -109,26 +110,49 @@ func insertWorker(wg *sync.WaitGroup) {
 		ni, err := db.Insert(r.Question[0].Name)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to insert %s: %s\n", r.Question[0].Name, err)
+			continue
 		}
 		if ni {
 			fmt.Printf("New domain inserted: %s\n", r.Question[0].Name)
 		}
 
-		if len(ReplyChan) > WarnThreshold {
-			fmt.Fprintf(os.Stderr, "Number of reply messages in queue exceeds the threshold: %d\n", len(ReplyChan))
+		err = db.RecordsUpdate(r.Question[0].Name, true)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to update records for %s: %s\n", r.Question[0].Name, err)
 		}
 	}
+}
+
+// Return whether r.Question is ANY type.
+func isQuestionAny(r *dns.Msg) bool {
+
+	// Is ANY?
+	for i := range r.Question {
+		if r.Question[i].Qtype == dns.TypeANY {
+			return true
+		}
+	}
+
+	return false
 }
 
 func handleFunc(w dns.ResponseWriter, q *dns.Msg) {
 
 	start := time.Now()
 
+	// Refuse ANY questions
+	if isQuestionAny(q) {
+		q.MsgHdr.Response = true
+		q.MsgHdr.Rcode = dns.RcodeRefused
+		w.WriteMsg(q)
+		return
+	}
+
 	r, err := dns.Exchange(q, getRandomResolver())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to exchange message: %s\n", err)
 		q.MsgHdr.Response = true
-		q.MsgHdr.Rcode = 2
+		q.MsgHdr.Rcode = dns.RcodeServerFailure
 		w.WriteMsg(q)
 		return
 	}
@@ -140,7 +164,7 @@ func handleFunc(w dns.ResponseWriter, q *dns.Msg) {
 		return
 	}
 
-	if r.Rcode == 0 {
+	if r.Rcode == dns.RcodeSuccess && len(ReplyChan) < cap(ReplyChan) {
 		ReplyChan <- r
 	}
 
@@ -156,6 +180,7 @@ func handleFunc(w dns.ResponseWriter, q *dns.Msg) {
 		dns.TypeToString[q.Question[0].Qtype],
 		dns.RcodeToString[r.Rcode],
 		time.Since(start))
+
 }
 
 func main() {
@@ -189,7 +214,6 @@ func main() {
 
 	// Create buff channel
 	ReplyChan = make(chan *dns.Msg, conf.BuffSize)
-	WarnThreshold = conf.BuffSize / 10 * 9
 
 	// Connect to MongoDB
 	fmt.Printf("Connecting to MongoDB...\n")
