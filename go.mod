@@ -3,7 +3,7 @@ module github.com/elmasy-com/columbus-dns
 go 1.19
 
 require (
-	github.com/elmasy-com/columbus-server v0.15.2-0.20230719045510-4b4b30086369
+	github.com/elmasy-com/columbus-server v0.15.2
 	github.com/elmasy-com/elnet v0.0.0-20230719042938-acec319fb6fb
 	github.com/miekg/dns v1.1.55
 	gopkg.in/yaml.v3 v3.0.1

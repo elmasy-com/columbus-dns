@@ -1,7 +1,7 @@
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/elmasy-com/columbus-server v0.15.2-0.20230719045510-4b4b30086369 h1:QDHpw0lTZ3PvBt79/+57t9fRnCRvMFsq+RSCpu9MnPM=
-github.com/elmasy-com/columbus-server v0.15.2-0.20230719045510-4b4b30086369/go.mod h1:0jTQbI/twEuJNA/htPlikC0KO5vt24TlLNqHWiy346o=
+github.com/elmasy-com/columbus-server v0.15.2 h1:oFNewxs0wk+LHsTO5qPK9nWVk4yKQH9KAhfwh+bK3eU=
+github.com/elmasy-com/columbus-server v0.15.2/go.mod h1:0jTQbI/twEuJNA/htPlikC0KO5vt24TlLNqHWiy346o=
 github.com/elmasy-com/elnet v0.0.0-20230719042938-acec319fb6fb h1:X9Eek0SlEpM08m6sgjLk0ITUQVo9g81qtRWMDJbh78g=
 github.com/elmasy-com/elnet v0.0.0-20230719042938-acec319fb6fb/go.mod h1:lo6vpAUmI57d4buBfarAAHhr9rr/G6MeTanusxaJikk=
 github.com/elmasy-com/identify v1.1.0 h1:RWW4FE+6gRpt9lATAyRojwsDiC/hLgO3B9TDdl98sbA=
