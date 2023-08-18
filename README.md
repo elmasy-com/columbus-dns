@@ -1,5 +1,11 @@
 # columbus-dns
 
+## This repository is deprecated!
+
+:bangbang: The server component is moved to [https://github.com/elmasy-com/columbus](https://github.com/elmasy-com/columbus).
+
+-----
+
 A DNS server to collect domains to Columbus Server.
 
 The goal of `columbus-dns` is to make it easy/possible for users to easily contribute to the Columbus Project.
